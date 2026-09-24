@@ -6,7 +6,7 @@
 
   <Identity
       Name="JosesoftPhotoViewer"
-      Publisher="CN=Josesoft"
+      Publisher="CN=Josecast"
       Version="1.0.0.0" />
 
   <Properties>
