@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://microsoft.com" xmlns:uap="http://microsoft.com" xmlns:rescap="http://microsoft.com/restrictedcapabilities">
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://microsoft.com">
   
   <Properties>
     <DisplayName>Josesoft Photo Viewer</DisplayName>
     <PublisherDisplayName>Josecast</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
+  <Resources>
+    <Resource Language="tr-TR" />
+    <Resource Language="en-US" />
+    <Resource Language="de-DE" />
+    <Resource Language="fr-FR" />
+    <Resource Language="es-ES" />
+    <Resource Language="it-IT" />
+    <Resource Language="pt-PT" />
+    <Resource Language="pl-PL" />
+  </Resources>
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
-  <Resources>
-    <Resource Language="TR-TR" />
-    <Resource Language="EN-US" />
-    <Resource Language="DE-DE" />
-    <Resource Language="FR-FR" />
-    <Resource Language="ES-ES" />
-    <Resource Language="IT-IT" />
-    <Resource Language="PT-PT" />
-    <Resource Language="PL-PL" />
-  </Resources>
   <Applications>
     <Application Id="App" Executable="JosesoftPhotoViewer_Store.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName="Josesoft Photo Viewer" Description="Josesoft Photo Viewer" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
