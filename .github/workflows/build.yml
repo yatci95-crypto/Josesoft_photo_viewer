@@ -19,6 +19,18 @@ jobs:
       run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer Photo_Viewer.py
     - name: Build Store EXE
       run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer_Store Photo_Viewer_Store.py
+
+    # Tüm PNG dosyalarını doğrudan .exe dosyalarının yanına kopyalıyoruz
+    - name: Copy PNG Assets Directly Next to EXE
+      shell: pwsh
+      run: |
+        $pngFiles = Get-ChildItem *.png
+        foreach ($file in $pngFiles) {
+          Copy-Item $file.FullName dist\JosesoftPhotoViewer\ -Force
+          Copy-Item $file.FullName dist\JosesoftPhotoViewer_Store\ -Force
+        }
+
+    # MSIX Hazırlığı (Dışarıdaki PNG'ler de otomatik olarak MSIX paketine dahil oluyor)
     - name: Prepare MSIX
       shell: pwsh
       run: |
@@ -39,15 +51,22 @@ jobs:
         & $m.FullName pack /d msix /p JosesoftPhotoViewer_Store.msix /o /v
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Get-ChildItem *.msix
-    - name: Zip
+    
+    # Standart EXE klasörünü PNG'ler içindeyken zip yapıyoruz
+    - name: Zip Normal EXE
       run: |
         Compress-Archive -Path dist\JosesoftPhotoViewer -DestinationPath JosesoftPhotoViewer.zip -Force
-        Compress-Archive -Path dist\JosesoftPhotoViewer_Store -DestinationPath JosesoftPhotoViewer_Store.zip -Force
-    - name: Upload
+
+    # ÇIKTI 1: Normal Kullanıcılar İçin Klasik Zip (İçinde EXE ve yanında PNG'ler var)
+    - name: Upload Standard Zip
       uses: actions/upload-artifact@v4
       with:
-        name: Josesoft-Build
-        path: |
-          JosesoftPhotoViewer.zip
-          JosesoftPhotoViewer_Store.zip
-          JosesoftPhotoViewer_Store.msix
+        name: JosesoftPhotoViewer-Standard-Zip
+        path: JosesoftPhotoViewer.zip
+
+    # ÇIKTI 2: Store İçin Doğrudan MSIX Paketi (Gereksiz zip yok, PNG'ler içine gömülü)
+    - name: Upload Store MSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: JosesoftPhotoViewer-Store-MSIX
+        path: JosesoftPhotoViewer_Store.msix
