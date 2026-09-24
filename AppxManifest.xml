@@ -1,30 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Package
-  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:uap="http://microsoft.com"
-  xmlns:rescap="http://microsoft.com"
-  IgnorableNamespaces="uap rescap">
-
-  
-
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
+  <Identity Name="Josesoft.Win7PhotoViewer" Publisher="CN=Josesoft" Version="6.0.0.0" />
   <Properties>
-    <DisplayName>Josesoft Photo Viewer</DisplayName>
+    <DisplayName>Windows 7 Photo Viewer</DisplayName>
     <PublisherDisplayName>Josesoft</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
-
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
-
   <Resources>
     <Resource Language="en-us" />
-    <Resource Language="tr-tr" />
   </Resources>
-
   <Applications>
-    <Application Id="JosesoftPhotoViewer" Executable="JosesoftPhotoViewer_Store.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="Josesoft Photo Viewer" Description="Josesoft tarafindan tasarlandi" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+    <Application Id="App" Executable="JosesoftPhotoViewer_Store.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="Windows 7 Photo Viewer" Description="Josesoft Photo Viewer" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
       </uap:VisualElements>
       <Extensions>
@@ -37,15 +27,12 @@
               <uap:FileType>.bmp</uap:FileType>
               <uap:FileType>.gif</uap:FileType>
               <uap:FileType>.webp</uap:FileType>
-              <uap:FileType>.tiff</uap:FileType>
-              <uap:FileType>.ico</uap:FileType>
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
         </uap:Extension>
       </Extensions>
     </Application>
   </Applications>
-
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
