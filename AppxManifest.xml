@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://microsoft.com">
+<Package xmlns="http://microsoft.com" xmlns:uap="http://microsoft.com" xmlns:rescap="http://microsoft.com/restrictedcapabilities">
   
   <Properties>
     <DisplayName>Josesoft Photo Viewer</DisplayName>
