@@ -1,61 +1,42 @@
-name: Build EXE and MSIX
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - name: Install deps
-      run: pip install PyQt6 pyinstaller Pillow
-    - name: Build Normal EXE
-      run: pyinstaller --onefile --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer Photo_Viewer.py
-    - name: Build Store EXE
-      run: pyinstaller --onefile --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer_Store Photo_Viewer_Store.py
-    - name: Prepare MSIX
-      run: |
-        mkdir msix
-        mkdir msix\Assets
-        Copy-Item dist\JosesoftPhotoViewer_Store.exe msix\
-        # ICO -> PNG cevirme
-        python -c "from PIL import Image; im=Image.open('app_icon.ico'); [im.resize((s,s), Image.LANCZOS).save(f'msix/Assets/Square{s}x{s}Logo.png') for s in [44,50,150,310]]; im.resize((310,150), Image.LANCZOS).save('msix/Assets/Wide310x150Logo.png'); im.resize((50,50), Image.LANCZOS).save('msix/Assets/StoreLogo.png')"
-        # Manifest yoksa olustur
-        if (!(Test-Path "AppxManifest.xml")) {
-          @"
-        <?xml version="1.0" encoding="utf-8"?>
-        <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
-          <Identity Name="Josesoft.Win7PhotoViewer" Publisher="CN=Josesoft" Version="6.0.0.0" />
-          <Properties><DisplayName>Windows 7 Photo Viewer</DisplayName><PublisherDisplayName>Josesoft</PublisherDisplayName><Logo>Assets\StoreLogo.png</Logo></Properties>
-          <Dependencies><TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" /></Dependencies>
-          <Resources><Resource Language="en-us" /><Resource Language="tr-tr" /></Resources>
-          <Applications>
-            <Application Id="Win7PhotoViewer" Executable="JosesoftPhotoViewer_Store.exe" EntryPoint="Windows.FullTrustApplication">
-              <uap:VisualElements DisplayName="Windows 7 Photo Viewer" Description="Josesoft tarafindan tasarlandi" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png"><uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" /></uap:VisualElements>
-              <Extensions><uap:Extension Category="windows.fileTypeAssociation"><uap:FileTypeAssociation Name="images"><uap:SupportedFileTypes><uap:FileType>.png</uap:FileType><uap:FileType>.jpg</uap:FileType><uap:FileType>.jpeg</uap:FileType><uap:FileType>.bmp</uap:FileType><uap:FileType>.gif</uap:FileType><uap:FileType>.webp</uap:FileType></uap:SupportedFileTypes></uap:FileTypeAssociation></uap:Extension></Extensions>
-            </Application>
-          </Applications>
-          <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
-        </Package>
-        "@ | Out-File -Encoding utf8 AppxManifest.xml
-        }
-        Copy-Item AppxManifest.xml msix\
-        dir msix\Assets
-    - name: Build MSIX
-      run: |
-        $m = Get-ChildItem "C:\Program Files (x86)\Windows Kits" -Recurse -Filter makeappx.exe | Select -First 1
-        & $m.FullName pack /d msix /p JosesoftPhotoViewer_Store.msix
-        dir
-    - name: Upload
-      uses: actions/upload-artifact@v4
-      with:
-        name: Build
-        path: |
-          dist/*.exe
-          *.msix
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
+  <Identity Name="Josesoft.Win7PhotoViewer" Publisher="CN=Josesoft" Version="6.0.0.0" />
+  <Properties>
+    <DisplayName>Windows 7 Photo Viewer</DisplayName>
+    <PublisherDisplayName>Josesoft</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="tr-tr" />
+  </Resources>
+  <Applications>
+    <Application Id="Win7PhotoViewer" Executable="JosesoftPhotoViewer_Store.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="Windows 7 Photo Viewer" Description="Josesoft tarafindan tasarlandi" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="images">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.png</uap:FileType>
+              <uap:FileType>.jpg</uap:FileType>
+              <uap:FileType>.jpeg</uap:FileType>
+              <uap:FileType>.bmp</uap:FileType>
+              <uap:FileType>.gif</uap:FileType>
+              <uap:FileType>.webp</uap:FileType>
+              <uap:FileType>.tiff</uap:FileType>
+              <uap:FileType>.ico</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
