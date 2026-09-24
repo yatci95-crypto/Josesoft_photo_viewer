@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package
-    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+    xmlns="http://microsoft.com"
+    xmlns:uap="http://microsoft.com"
+    xmlns:rescap="http://microsoft.com/restrictedcapabilities"
     IgnorableNamespaces="uap rescap">
 
-  <Identity
-      Name="JosesoftPhotoViewer"
-      Publisher="CN=Josecast"
-      Version="1.0.0.0" />
+  
 
   <Properties>
     <DisplayName>Josesoft Photo Viewer</DisplayName>
