@@ -13,14 +13,16 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+
     - name: Install deps
       run: pip install PyQt6 pyinstaller Pillow
+
     - name: Build Normal EXE
       run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer Photo_Viewer.py
+
     - name: Build Store EXE
       run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer_Store Photo_Viewer_Store.py
 
-    # Tüm PNG dosyalarını doğrudan .exe dosyalarının yanına kopyalıyoruz
     - name: Copy PNG Assets Directly Next to EXE
       shell: pwsh
       run: |
@@ -30,7 +32,6 @@ jobs:
           Copy-Item $file.FullName dist\JosesoftPhotoViewer_Store\ -Force
         }
 
-    # MSIX Hazırlığı (Dışarıdaki PNG'ler de otomatik olarak MSIX paketine dahil oluyor)
     - name: Prepare MSIX
       shell: pwsh
       run: |
@@ -38,11 +39,24 @@ jobs:
         New-Item -ItemType Directory -Path msix -Force | Out-Null
         New-Item -ItemType Directory -Path msix\Assets -Force | Out-Null
         Copy-Item dist\JosesoftPhotoViewer_Store\* msix\ -Recurse -Force
-        $img = [System.Drawing.Image]::FromFile((Resolve-Path app_icon.ico).Path)
-        # Pillow ile logo uret
-        python -c "from PIL import Image; im=Image.open('app_icon.ico'); im.resize((44,44)).save('msix/Assets/Square44x44Logo.png'); im.resize((150,150)).save('msix/Assets/Square150x150Logo.png'); im.resize((310,150)).save('msix/Assets/Wide310x150Logo.png'); im.resize((50,50)).save('msix/Assets/StoreLogo.png')"
+
+        python -c "from PIL import Image; im=Image.open('app_icon.ico'); im.resize((44,44)).save('msix/Assets/Square44x44Logo.png'); im.resize((150,150)).save('msix/Assets/Square150x150Logo.png')"
+
         Copy-Item AppxManifest.xml msix\AppxManifest.xml -Force
-        Get-Content msix\AppxManifest.xml | Select-Object -First 30
+
+    - name: Validate MSIX manifest
+      shell: pwsh
+      run: |
+        $xml = [xml](Get-Content -Raw msix\AppxManifest.xml)
+        $root = $xml.DocumentElement
+        if ($root.LocalName -ne "Package") { throw "Root element must be Package" }
+        if ($root.NamespaceURI -ne "http://schemas.microsoft.com/appx/manifest/foundation/windows10") {
+          throw "Invalid manifest namespace: $($root.NamespaceURI)"
+        }
+        if (-not (Test-Path "msix\JosesoftPhotoViewer_Store.exe")) {
+          throw "Executable not found in msix folder"
+        }
+
     - name: Build MSIX
       shell: pwsh
       run: |
@@ -51,20 +65,16 @@ jobs:
         & $m.FullName pack /d msix /p JosesoftPhotoViewer_Store.msix /o /v
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Get-ChildItem *.msix
-    
-    # Standart EXE klasörünü PNG'ler içindeyken zip yapıyoruz
-    - name: Zip Normal EXE
-      run: |
-        Compress-Archive -Path dist\JosesoftPhotoViewer -DestinationPath JosesoftPhotoViewer.zip -Force
 
-    # ÇIKTI 1: Normal Kullanıcılar İçin Klasik Zip (İçinde EXE ve yanında PNG'ler var)
+    - name: Zip Normal EXE
+      run: Compress-Archive -Path dist\JosesoftPhotoViewer -DestinationPath JosesoftPhotoViewer.zip -Force
+
     - name: Upload Standard Zip
       uses: actions/upload-artifact@v4
       with:
         name: JosesoftPhotoViewer-Standard-Zip
         path: JosesoftPhotoViewer.zip
 
-    # ÇIKTI 2: Store İçin Doğrudan MSIX Paketi (Gereksiz zip yok, PNG'ler içine gömülü)
     - name: Upload Store MSIX
       uses: actions/upload-artifact@v4
       with:
