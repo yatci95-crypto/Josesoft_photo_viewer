@@ -1,15 +1,3 @@
-
-"""
-Windows 7 Fotoğraf Görüntüleyicisi v6 - ICON FIX
-- Simgeler duzeltildi: Win7 Aero seffaf ikonlar
-- Klasor tarama + ortalanmis alt bar korundu
-- Animasyonlu ikonlar + seffaf PNG
-
-ikon dosyaları: icon_zoom.png, icon_actual.png, icon_prev.png, icon_next.png,
-icon_center.png, icon_rotleft.png, icon_rotright.png, icon_delete.png
-ve program ikonu icon.png ayni klasorde olmali
-"""
-
 import sys
 import os
 import locale
@@ -1080,7 +1068,75 @@ def scan_images_in_folder(folder_path):
     except:
         return []
 
-# === ICON YUKLEME ===
+# === ICON YUKLEME - PYINSTALLER UYUMLU FIX ===
+def _get_base_dirs():
+    """Exe icinde _MEIPASS, normal calismada __file__ ve cwd kontrolu"""
+    dirs = []
+    # 1. PyInstaller bundle icindeki gecici klasor
+    if getattr(sys, 'frozen', False):
+        meipass = getattr(sys, '_MEIPASS', None)
+        if meipass and os.path.isdir(meipass):
+            dirs.append(meipass)
+        # 2. Exe'nin yanindaki klasor (onefile modunda exe'nin oldugu yer)
+        try:
+            dirs.append(os.path.dirname(os.path.abspath(sys.executable)))
+        except:
+            pass
+    # 3. Python dosyasinin klasoru (script modunda)
+    try:
+        if '__file__' in globals():
+            dirs.append(os.path.dirname(os.path.abspath(__file__)))
+        else:
+            # __file__ yoksa da dene
+            dirs.append(os.path.dirname(os.path.abspath(sys.argv[0])))
+    except:
+        pass
+    # 4. CWD ve .
+    dirs.append(os.getcwd())
+    dirs.append(os.path.abspath("."))
+    # uniq
+    seen = set()
+    out = []
+    for d in dirs:
+        if not d:
+            continue
+        try:
+            ad = os.path.abspath(d)
+        except:
+            ad = d
+        if ad not in seen:
+            seen.add(ad)
+            if os.path.isdir(ad):
+                out.append(ad)
+            else:
+                # dosya yolu geldiyse klasore cevir
+                out.append(os.path.dirname(ad) if os.path.isfile(ad) else ad)
+    return out
+
+def resource_path(relative_path):
+    """PyInstaller --add-data ile gomulen dosyalari bulur"""
+    try:
+        base = getattr(sys, '_MEIPASS', None)
+        if base and getattr(sys, 'frozen', False):
+            p = os.path.join(base, relative_path)
+            if os.path.exists(p):
+                return p
+    except:
+        pass
+    for base in _get_base_dirs():
+        p = os.path.join(base, relative_path)
+        if os.path.exists(p):
+            return p
+        # icons alt klasoru desteği
+        p2 = os.path.join(base, "icons", relative_path)
+        if os.path.exists(p2):
+            return p2
+    # bulamazsa ilk base ile dondur (PyInstaller icinde olacak)
+    try:
+        return os.path.join(_get_base_dirs()[0], relative_path)
+    except:
+        return os.path.join(os.getcwd(), relative_path)
+
 def find_icon_file(kind):
     names = {
         "zoom": ["icon_zoom.png","zoom.png"],
@@ -1092,23 +1148,41 @@ def find_icon_file(kind):
         "rot_right": ["icon_rotright.png","rotright.png","icon_rot_right.png"],
         "delete": ["icon_delete.png","delete.png","icon_x.png"],
     }
-    search_dirs = [
-        os.path.dirname(os.path.abspath(__file__)),
-        os.getcwd(),
-        "/mnt/data",
-        "."
-    ]
-    for d in search_dirs:
+    # tum olasi base'lerde ara
+    for base_dir in _get_base_dirs():
         for fname in names.get(kind, []):
-            p = os.path.join(d, fname)
-            if os.path.exists(p):
-                return p
+            for sub in ["", "icons", "assets", "assets/icons"]:
+                if sub:
+                    p = os.path.join(base_dir, sub, fname)
+                else:
+                    p = os.path.join(base_dir, fname)
+                if os.path.exists(p):
+                    return p
+    # resource_path ile de dene (PyInstaller garantisi)
+    for fname in names.get(kind, []):
+        rp = resource_path(fname)
+        if os.path.exists(rp):
+            return rp
     return None
 
 def load_qicon(kind, fallback_size=32):
     path = find_icon_file(kind)
     if path and os.path.exists(path):
-        return QIcon(path)
+        try:
+            # QIcon direkt dosya yolundan
+            ic = QIcon(path)
+            if not ic.isNull():
+                return ic
+        except:
+            pass
+        try:
+            # QPixmap uzerinden dene (bazen QIcon fail oluyor)
+            pm = QPixmap(path)
+            if not pm.isNull():
+                return QIcon(pm)
+        except:
+            pass
+    # Fallback: elle cizim (eski kod korundu)
     pm = QPixmap(fallback_size, fallback_size)
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
@@ -1408,33 +1482,50 @@ class Win7Viewer(QMainWindow):
         self.load_initial_images()
     
     def set_program_icon(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        possible=[
-            "app_icon.ico",
-            "icon.ico",
-            "app_icon.png",
-            "icon.png",
-            os.path.join(base_dir, "app_icon.ico"),
-            os.path.join(base_dir, "icon.ico"),
-            os.path.join(base_dir, "app_icon.png"),
-            os.path.join(base_dir, "icon.png"),
-            os.path.join(os.getcwd(), "app_icon.ico"),
-            os.path.join(os.getcwd(), "icon.ico"),
-            "/mnt/data/app_icon.ico",
-            "/mnt/data/icon.ico",
-            "/mnt/data/app_icon.png",
-            "/mnt/data/icon.png",
+        # PyInstaller uyumlu program ikonu yukleme
+        candidates = [
+            "app_icon.ico", "icon.ico",
+            "app_icon.png", "icon.png",
+            "app.ico", "app.png"
         ]
-        for p in possible:
-            if os.path.exists(p):
-                self.setWindowIcon(QIcon(p))
+        # tum base dirlerde ara
+        for base in _get_base_dirs():
+            for name in candidates:
+                for sub in ["", "icons", "assets"]:
+                    p = os.path.join(base, sub, name) if sub else os.path.join(base, name)
+                    if os.path.exists(p):
+                        try:
+                            qic = QIcon(p)
+                            if not qic.isNull():
+                                self.setWindowIcon(qic)
+                                try:
+                                    inst = QApplication.instance()
+                                    if inst:
+                                        inst.setWindowIcon(qic)
+                                except:
+                                    pass
+                                return
+                        except:
+                            pass
+        # resource_path ile son deneme
+        for name in candidates:
+            rp = resource_path(name)
+            if os.path.exists(rp):
                 try:
-                    from PyQt6.QtWidgets import QApplication
-                    QApplication.instance().setWindowIcon(QIcon(p))
+                    qic = QIcon(rp)
+                    if not qic.isNull():
+                        self.setWindowIcon(qic)
+                        try:
+                            inst = QApplication.instance()
+                            if inst:
+                                inst.setWindowIcon(qic)
+                        except:
+                            pass
+                        return
                 except:
                     pass
-                return
-    
+
+        
     def t(self,key):
         return TRANSLATIONS.get(self.current_lang,TRANSLATIONS["en"]).get(key,TRANSLATIONS["en"].get(key,key))
     
