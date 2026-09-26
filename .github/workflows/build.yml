@@ -17,20 +17,60 @@ jobs:
     - name: Install deps
       run: pip install PyQt6 pyinstaller Pillow
 
+    # NORMAL EXE - onedir + ikonlar gömülü
     - name: Build Normal EXE
-      run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer Photo_Viewer.py
+      run: |
+        pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer `
+          --add-data "app_icon.ico;." `
+          --add-data "icon.ico;." `
+          --add-data "app_icon.png;." `
+          --add-data "icon.png;." `
+          --add-data "icon_zoom.png;." `
+          --add-data "icon_actual.png;." `
+          --add-data "icon_prev.png;." `
+          --add-data "icon_next.png;." `
+          --add-data "icon_center.png;." `
+          --add-data "icon_rotleft.png;." `
+          --add-data "icon_rotright.png;." `
+          --add-data "icon_delete.png;." `
+          Photo_Viewer.py
 
+    # STORE EXE - onedir + ikonlar gömülü
     - name: Build Store EXE
-      run: pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer_Store Photo_Viewer_Store.py
+      run: |
+        pyinstaller --onedir --windowed --icon=app_icon.ico --name=JosesoftPhotoViewer_Store `
+          --add-data "app_icon.ico;." `
+          --add-data "icon.ico;." `
+          --add-data "app_icon.png;." `
+          --add-data "icon.png;." `
+          --add-data "icon_zoom.png;." `
+          --add-data "icon_actual.png;." `
+          --add-data "icon_prev.png;." `
+          --add-data "icon_next.png;." `
+          --add-data "icon_center.png;." `
+          --add-data "icon_rotleft.png;." `
+          --add-data "icon_rotright.png;." `
+          --add-data "icon_delete.png;." `
+          Photo_Viewer_Store.py
 
+    # Fallback: Eski yöntemle de kopyala (zararı yok, çift garanti)
     - name: Copy PNG Assets Directly Next to EXE
       shell: pwsh
       run: |
-        $pngFiles = Get-ChildItem *.png
-        foreach ($file in $pngFiles) {
-          Copy-Item $file.FullName dist\JosesoftPhotoViewer\ -Force
-          Copy-Item $file.FullName dist\JosesoftPhotoViewer_Store\ -Force
+        $files = @("app_icon.ico","icon.ico","app_icon.png","icon.png","icon_zoom.png","icon_actual.png","icon_prev.png","icon_next.png","icon_center.png","icon_rotleft.png","icon_rotright.png","icon_delete.png")
+        foreach ($f in $files) {
+          if (Test-Path $f) {
+            Copy-Item $f dist\JosesoftPhotoViewer\ -Force -ErrorAction SilentlyContinue
+            Copy-Item $f dist\JosesoftPhotoViewer_Store\ -Force -ErrorAction SilentlyContinue
+            Write-Host "Copied $f"
+          } else {
+            Write-Host "Missing $f (skip)"
+          }
         }
+        Write-Host "=== Normal ==="
+        Get-ChildItem dist\JosesoftPhotoViewer\
+        Write-Host "=== Store ==="
+        Get-ChildItem dist\JosesoftPhotoViewer_Store\
 
     - name: Prepare MSIX
       shell: pwsh
@@ -56,6 +96,11 @@ jobs:
         if (-not (Test-Path "msix\JosesoftPhotoViewer_Store.exe")) {
           throw "Executable not found in msix folder"
         }
+        # ikonlar msix icinde mi?
+        $icons = @("icon_zoom.png","icon_actual.png")
+        foreach ($ic in $icons) {
+          if (-not (Test-Path "msix\$ic")) { Write-Host "WARNING: $ic not in msix root, but will be found via _MEIPASS if embedded" }
+        }
 
     - name: Build MSIX
       shell: pwsh
@@ -67,6 +112,7 @@ jobs:
         Get-ChildItem *.msix
 
     - name: Zip Normal EXE
+      shell: pwsh
       run: Compress-Archive -Path dist\JosesoftPhotoViewer -DestinationPath JosesoftPhotoViewer.zip -Force
 
     - name: Upload Standard Zip
